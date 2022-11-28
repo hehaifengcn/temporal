@@ -43,7 +43,6 @@ import (
 	"go.temporal.io/api/workflowservice/v1"
 
 	enumsspb "go.temporal.io/server/api/enums/v1"
-	historyspb "go.temporal.io/server/api/history/v1"
 	"go.temporal.io/server/api/historyservice/v1"
 	"go.temporal.io/server/api/matchingservice/v1"
 	replicationspb "go.temporal.io/server/api/replication/v1"
@@ -1729,7 +1728,7 @@ func (e *historyEngineImpl) ReapplyEvents(
 			workflowID,
 			"",
 		),
-		func(workflowContext api.WorkflowContext) (action *api.UpdateWorkflowAction, retErr error) {
+		func(workflowContext api.WorkflowContext) (*api.UpdateWorkflowAction, error) {
 			context := workflowContext.GetContext()
 			mutableState := workflowContext.GetMutableState()
 			// Filter out reapply event from the same cluster
@@ -1737,20 +1736,6 @@ func (e *historyEngineImpl) ReapplyEvents(
 			lastWriteVersion, err := mutableState.GetLastWriteVersion()
 			if err != nil {
 				return nil, err
-			}
-			sourceMutableState := mutableState
-			if sourceMutableState.GetWorkflowKey().RunID != runID {
-				originCtx, err := e.workflowConsistencyChecker.GetWorkflowContext(
-					ctx,
-					nil,
-					api.BypassMutableStateConsistencyPredicate,
-					definition.NewWorkflowKey(namespaceID.String(), workflowID, runID),
-				)
-				if err != nil {
-					return nil, err
-				}
-				defer func() { originCtx.GetReleaseFn()(retErr) }()
-				sourceMutableState = originCtx.GetMutableState()
 			}
 
 			for _, event := range reapplyEvents {
@@ -1761,10 +1746,6 @@ func (e *historyEngineImpl) ReapplyEvents(
 				dedupResource := definition.NewEventReappliedID(runID, event.GetEventId(), event.GetVersion())
 				if mutableState.IsResourceDuplicated(dedupResource) {
 					// already apply the signal
-					continue
-				}
-				versionHistories := sourceMutableState.GetExecutionInfo().GetVersionHistories()
-				if e.containsHistoryEvent(versionHistories, event.GetEventId(), event.GetVersion()) {
 					continue
 				}
 
@@ -2084,20 +2065,6 @@ func (e *historyEngineImpl) GetReplicationStatus(
 	resp.RemoteClusters = remoteClusters
 	resp.HandoverNamespaces = handoverNamespaces
 	return resp, nil
-}
-
-func (e *historyEngineImpl) containsHistoryEvent(
-	versionHistories *historyspb.VersionHistories,
-	reappliedEventID int64,
-	reappliedEventVersion int64,
-) bool {
-	// Check if the source workflow contains the reapply event.
-	// If it does, it means the event is received in this cluster, no need to reapply.
-	_, err := versionhistory.FindFirstVersionHistoryIndexByVersionHistoryItem(
-		versionHistories,
-		versionhistory.NewVersionHistoryItem(reappliedEventID, reappliedEventVersion),
-	)
-	return err == nil
 }
 
 func historyEventOnCurrentBranch(
