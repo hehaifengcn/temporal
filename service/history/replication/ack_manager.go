@@ -453,7 +453,17 @@ func (p *ackMgrImpl) generateHistoryReplicationTask(
 				taskInfo.FirstEventID,
 				taskInfo.NextEventID,
 			)
-			if err != nil {
+			switch err.(type) {
+			case nil:
+				// continue to generate replication task.
+			case *serviceerror.NotFound, *serviceerror.DataLoss, *serviceerror.Unavailable:
+				// bypass this corrupted workflow to unblock the replication queue.
+				p.logger.Error("Cannot get history from corrupted workflow",
+					tag.WorkflowNamespaceID(namespaceID.String()),
+					tag.WorkflowID(workflowID),
+					tag.WorkflowRunID(runID))
+				return nil, nil
+			default:
 				return nil, err
 			}
 
@@ -657,7 +667,18 @@ func (p *ackMgrImpl) processNewRunReplication(
 			common.FirstEventID,
 			common.FirstEventID+1,
 		)
-		if err != nil {
+		switch err.(type) {
+		case nil:
+			// continue to generate replication task.
+		case *serviceerror.NotFound, *serviceerror.DataLoss, *serviceerror.Unavailable:
+			// bypass this corrupted workflow to unblock the replication queue.
+			p.logger.Error("Cannot get history from corrupted workflow",
+				tag.WorkflowNamespaceID(namespaceID.String()),
+				tag.WorkflowID(workflowID),
+				tag.WorkflowRunID(newRunID))
+			// only return the task with current run and bypass the new run.
+			return task, nil
+		default:
 			return nil, err
 		}
 	}
