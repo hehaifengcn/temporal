@@ -122,7 +122,6 @@ func (s *taskExecutorSuite) SetupTest() {
 		s.remoteCluster,
 		s.mockShard,
 		s.nDCHistoryResender,
-		s.mockEngine,
 		deletemanager.NewMockDeleteManager(s.controller),
 		s.workflowCache,
 	).(*taskExecutorImpl)

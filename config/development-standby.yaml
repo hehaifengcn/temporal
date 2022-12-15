@@ -6,7 +6,7 @@ persistence:
   defaultStore: cass-default
   visibilityStore:
   advancedVisibilityStore: es-visibility
-  numHistoryShards: 4
+  numHistoryShards: 16
   datastores:
     cass-default:
       cassandra:
@@ -65,7 +65,7 @@ services:
 clusterMetadata:
   enableGlobalNamespace: true
   failoverVersionIncrement: 10
-  masterClusterName: "active"
+  masterClusterName: "standby"
   currentClusterName: "standby"
   clusterInformation:
     active:

@@ -275,7 +275,10 @@ service HistoryService {
     }
 
     // (-- api-linter: core::0134=disabled
-    //     aip.dev/not-precedent: This service does not follow the update method AIP --)
+    //     aip.dev/not-precedent: This service does not follow the update method API --)
     rpc UpdateWorkflow(UpdateWorkflowRequest) returns (UpdateWorkflowResponse) {
+    }
+
+    rpc ReplicateWorkflowState(ReplicateWorkflowStateRequest) returns (ReplicateWorkflowStateResponse) {
     }
 }

@@ -1818,6 +1818,37 @@ func (h *Handler) UpdateWorkflow(
 	return engine.UpdateWorkflow(ctx, request)
 }
 
+func (h *Handler) ReplicateWorkflowState(
+	ctx context.Context,
+	request *historyservice.ReplicateWorkflowStateRequest,
+) (_ *historyservice.ReplicateWorkflowStateResponse, retError error) {
+	defer log.CapturePanic(h.logger, &retError)
+	h.startWG.Wait()
+
+	if h.isStopped() {
+		return nil, errShuttingDown
+	}
+
+	shardContext, err := h.controller.GetShardByNamespaceWorkflow(
+		namespace.ID(request.GetWorkflowState().GetExecutionInfo().GetNamespaceId()),
+		request.GetWorkflowState().GetExecutionInfo().GetWorkflowId(),
+	)
+	if err != nil {
+		return nil, h.convertError(err)
+	}
+
+	engine, err := shardContext.GetEngine(ctx)
+	if err != nil {
+		return nil, h.convertError(err)
+	}
+
+	err = engine.ReplicateWorkflowState(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+	return &historyservice.ReplicateWorkflowStateResponse{}, nil
+}
+
 // convertError is a helper method to convert ShardOwnershipLostError from persistence layer returned by various
 // HistoryEngine API calls to ShardOwnershipLost error return by HistoryService for client to be redirected to the
 // correct shard.

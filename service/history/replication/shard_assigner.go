@@ -24,42 +24,18 @@
 
 package replication
 
-import (
-	"go.uber.org/fx"
-
-	"go.temporal.io/server/client"
-	"go.temporal.io/server/common/cluster"
-	"go.temporal.io/server/common/log"
-	"go.temporal.io/server/service/history/configs"
-)
-
-var Module = fx.Options(
-	fx.Provide(ReplicationTaskFetcherFactoryProvider),
-	fx.Provide(ReplicationTaskExecutorProvider),
-)
-
-func ReplicationTaskFetcherFactoryProvider(
-	logger log.Logger,
-	config *configs.Config,
-	clusterMetadata cluster.Metadata,
-	clientBean client.Bean,
-) TaskFetcherFactory {
-	return NewTaskFetcherFactory(
-		logger,
-		config,
-		clusterMetadata,
-		clientBean,
-	)
-}
-
-func ReplicationTaskExecutorProvider() TaskExecutorProvider {
-	return func(params TaskExecutorParams) TaskExecutor {
-		return NewTaskExecutor(
-			params.RemoteCluster,
-			params.Shard,
-			params.HistoryResender,
-			params.DeleteManager,
-			params.WorkflowCache,
-		)
+func GetRemoteShardIDs(localShardId int32, localShardCount int32, remoteShardCount int32) []int32 {
+	var pollingShards []int32
+	if remoteShardCount <= localShardCount {
+		if localShardId <= remoteShardCount {
+			pollingShards = append(pollingShards, localShardId)
+		}
+		return pollingShards
+	} else {
+		// remoteShardCount > localShardCount
+		for i := localShardId; i <= remoteShardCount; i += localShardCount {
+			pollingShards = append(pollingShards, i)
+		}
 	}
+	return pollingShards
 }

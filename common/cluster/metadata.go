@@ -104,6 +104,7 @@ type (
 		InitialFailoverVersion int64 `yaml:"initialFailoverVersion"`
 		// Address indicate the remote service address(Host:Port). Host can be DNS name.
 		RPCAddress string `yaml:"rpcAddress"`
+		ShardCount int32
 		// private field to track cluster information updates
 		version int64
 	}
@@ -401,6 +402,7 @@ func (m *metadataImpl) RegisterMetadataChangeCallback(callbackId any, cb Callbac
 			InitialFailoverVersion: clusterInfo.InitialFailoverVersion,
 			RPCAddress:             clusterInfo.RPCAddress,
 			version:                clusterInfo.version,
+			ShardCount:             clusterInfo.ShardCount,
 		}
 	}
 	m.clusterLock.RUnlock()
@@ -454,6 +456,7 @@ func (m *metadataImpl) refreshClusterMetadata(ctx context.Context) error {
 				InitialFailoverVersion: newClusterInfo.InitialFailoverVersion,
 				RPCAddress:             newClusterInfo.RPCAddress,
 				version:                newClusterInfo.version,
+				ShardCount:             newClusterInfo.ShardCount,
 			}
 		} else if newClusterInfo.version > oldClusterInfo.version {
 			if newClusterInfo.Enabled == oldClusterInfo.Enabled &&
@@ -468,12 +471,14 @@ func (m *metadataImpl) refreshClusterMetadata(ctx context.Context) error {
 				InitialFailoverVersion: oldClusterInfo.InitialFailoverVersion,
 				RPCAddress:             oldClusterInfo.RPCAddress,
 				version:                oldClusterInfo.version,
+				ShardCount:             oldClusterInfo.ShardCount,
 			}
 			newEntries[clusterName] = &ClusterInformation{
 				Enabled:                newClusterInfo.Enabled,
 				InitialFailoverVersion: newClusterInfo.InitialFailoverVersion,
 				RPCAddress:             newClusterInfo.RPCAddress,
 				version:                newClusterInfo.version,
+				ShardCount:             newClusterInfo.ShardCount,
 			}
 		}
 	}
@@ -576,6 +581,7 @@ func (m *metadataImpl) listAllClusterMetadataFromDB(
 			Enabled:                getClusterResp.GetIsConnectionEnabled(),
 			InitialFailoverVersion: getClusterResp.GetInitialFailoverVersion(),
 			RPCAddress:             getClusterResp.GetClusterAddress(),
+			ShardCount:             getClusterResp.GetHistoryShardCount(),
 			version:                getClusterResp.Version,
 		}
 	}

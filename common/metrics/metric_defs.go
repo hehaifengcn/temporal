@@ -471,6 +471,8 @@ const (
 	HistoryClientRecordActivityTaskStartedScope = "HistoryClientRecordActivityTaskStarted"
 	// HistoryClientRequestCancelWorkflowExecutionScope tracks RPC calls to history service
 	HistoryClientRequestCancelWorkflowExecutionScope = "HistoryClientRequestCancelWorkflowExecution"
+	// HistoryClientReplicateWorkflowStateScope tracks RPC calls to history service
+	HistoryClientReplicateWorkflowStateScope = "HistoryClientReplicateWorkflowState"
 	// HistoryClientSignalWorkflowExecutionScope tracks RPC calls to history service
 	HistoryClientSignalWorkflowExecutionScope = "HistoryClientSignalWorkflowExecution"
 	// HistoryClientSignalWithStartWorkflowExecutionScope tracks RPC calls to history service

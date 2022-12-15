@@ -71,7 +71,6 @@ type (
 		shard              shard.Context
 		namespaceRegistry  namespace.Registry
 		nDCHistoryResender xdc.NDCHistoryResender
-		historyEngine      shard.Engine
 		deleteManager      deletemanager.DeleteManager
 		workflowCache      wcache.Cache
 		metricsHandler     metrics.MetricsHandler
@@ -85,7 +84,6 @@ func NewTaskExecutor(
 	remoteCluster string,
 	shard shard.Context,
 	nDCHistoryResender xdc.NDCHistoryResender,
-	historyEngine shard.Engine,
 	deleteManager deletemanager.DeleteManager,
 	workflowCache wcache.Cache,
 ) TaskExecutor {
@@ -95,7 +93,6 @@ func NewTaskExecutor(
 		shard:              shard,
 		namespaceRegistry:  shard.GetNamespaceRegistry(),
 		nDCHistoryResender: nDCHistoryResender,
-		historyEngine:      historyEngine,
 		deleteManager:      deleteManager,
 		workflowCache:      workflowCache,
 		metricsHandler:     shard.GetMetricsHandler(),
@@ -174,7 +171,7 @@ func (e *taskExecutorImpl) handleActivityTask(
 	ctx, cancel := e.newTaskContext(ctx, attr.NamespaceId)
 	defer cancel()
 
-	err = e.historyEngine.SyncActivity(ctx, request)
+	_, err = e.shard.GetHistoryClient().SyncActivity(ctx, request)
 	switch retryErr := err.(type) {
 	case nil:
 		return nil
@@ -213,7 +210,8 @@ func (e *taskExecutorImpl) handleActivityTask(
 			e.logger.Error("error resend history for history event", tag.Error(resendErr))
 			return err
 		}
-		return e.historyEngine.SyncActivity(ctx, request)
+		_, err = e.shard.GetHistoryClient().SyncActivity(ctx, request)
+		return err
 
 	default:
 		return err
@@ -254,7 +252,7 @@ func (e *taskExecutorImpl) handleHistoryReplicationTask(
 	ctx, cancel := e.newTaskContext(ctx, attr.NamespaceId)
 	defer cancel()
 
-	err = e.historyEngine.ReplicateEventsV2(ctx, request)
+	_, err = e.shard.GetHistoryClient().ReplicateEventsV2(ctx, request)
 	switch retryErr := err.(type) {
 	case nil:
 		return nil
@@ -294,7 +292,8 @@ func (e *taskExecutorImpl) handleHistoryReplicationTask(
 			return err
 		}
 
-		return e.historyEngine.ReplicateEventsV2(ctx, request)
+		_, err = e.shard.GetHistoryClient().ReplicateEventsV2(ctx, request)
+		return err
 
 	default:
 		return err
@@ -319,10 +318,11 @@ func (e *taskExecutorImpl) handleSyncWorkflowStateTask(
 	ctx, cancel := e.newTaskContext(ctx, executionInfo.NamespaceId)
 	defer cancel()
 
-	return e.historyEngine.ReplicateWorkflowState(ctx, &historyservice.ReplicateWorkflowStateRequest{
+	_, err = e.shard.GetHistoryClient().ReplicateWorkflowState(ctx, &historyservice.ReplicateWorkflowStateRequest{
 		WorkflowState: attr.GetWorkflowState(),
 		RemoteCluster: e.remoteCluster,
 	})
+	return err
 }
 
 func (e *taskExecutorImpl) filterTask(

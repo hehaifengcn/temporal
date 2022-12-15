@@ -26,6 +26,7 @@ package persistence
 
 import (
 	"context"
+	"runtime/debug"
 
 	commonpb "go.temporal.io/api/common/v1"
 	enumspb "go.temporal.io/api/enums/v1"
@@ -63,6 +64,9 @@ func (m *shardManagerImpl) GetOrCreateShard(
 	ctx context.Context,
 	request *GetOrCreateShardRequest,
 ) (*GetOrCreateShardResponse, error) {
+	if request.ShardID > 4 {
+		debug.PrintStack()
+	}
 	createShardInfo := func() (int64, *commonpb.DataBlob, error) {
 		shardInfo := request.InitialShardInfo
 		if shardInfo == nil {

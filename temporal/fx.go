@@ -737,6 +737,7 @@ func loadClusterInformationFromStore(ctx context.Context, config *config.Config,
 			Enabled:                metadata.IsConnectionEnabled,
 			InitialFailoverVersion: metadata.InitialFailoverVersion,
 			RPCAddress:             metadata.ClusterAddress,
+			ShardCount:             metadata.GetHistoryShardCount(),
 		}
 		if staticClusterMetadata, ok := config.ClusterMetadata.ClusterInformation[metadata.ClusterName]; ok {
 			if metadata.ClusterName != config.ClusterMetadata.CurrentClusterName {

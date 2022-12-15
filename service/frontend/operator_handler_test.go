@@ -612,29 +612,6 @@ func (s *operatorHandlerSuite) Test_AddOrUpdateRemoteCluster_ValidationError_Fai
 	s.IsType(&serviceerror.InvalidArgument{}, err)
 }
 
-func (s *operatorHandlerSuite) Test_AddOrUpdateRemoteCluster_ValidationError_ShardCountMismatch() {
-	var rpcAddress = uuid.New()
-	var clusterName = uuid.New()
-	var clusterId = uuid.New()
-
-	s.mockResource.ClusterMetadata.EXPECT().GetFailoverVersionIncrement().Return(int64(0))
-	s.mockResource.ClientFactory.EXPECT().NewRemoteAdminClientWithTimeout(rpcAddress, gomock.Any(), gomock.Any()).Return(
-		s.mockResource.RemoteAdminClient,
-	)
-	s.mockResource.RemoteAdminClient.EXPECT().DescribeCluster(gomock.Any(), &adminservice.DescribeClusterRequest{}).Return(
-		&adminservice.DescribeClusterResponse{
-			ClusterId:                clusterId,
-			ClusterName:              clusterName,
-			HistoryShardCount:        1000,
-			FailoverVersionIncrement: 0,
-			InitialFailoverVersion:   0,
-			IsGlobalNamespaceEnabled: true,
-		}, nil)
-	_, err := s.handler.AddOrUpdateRemoteCluster(context.Background(), &operatorservice.AddOrUpdateRemoteClusterRequest{FrontendAddress: rpcAddress})
-	s.Error(err)
-	s.IsType(&serviceerror.InvalidArgument{}, err)
-}
-
 func (s *operatorHandlerSuite) Test_AddOrUpdateRemoteCluster_ValidationError_GlobalNamespaceDisabled() {
 	var rpcAddress = uuid.New()
 	var clusterName = uuid.New()
