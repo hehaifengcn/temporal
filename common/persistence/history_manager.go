@@ -104,7 +104,7 @@ func (m *executionManagerImpl) ForkHistoryBranch(
 	// The above newBranchInfo is a lossy construction of the forked branch token from the original opaque branch token.
 	// It only initializes with the fields it understands, which may inadvertently discard other misc fields. The
 	// following is the replacement logic to correctly apply the updated fields into the original opaque branch token.
-	resp, err := m.UpdateHistoryBranchInfo(
+	resp, err := m.GetHistoryBranchUtil().UpdateHistoryBranchInfo(
 		ctx,
 		&UpdateHistoryBranchInfoRequest{
 			BranchToken: request.ForkBranchToken,
@@ -179,7 +179,7 @@ func (m *executionManagerImpl) DeleteHistoryBranch(
 	// usedBranches record branches referenced by others
 	usedBranches := map[string]int64{}
 	for _, br := range historyTreeResp.BranchTokens {
-		resp, err := m.ParseHistoryBranchInfo(
+		resp, err := m.GetHistoryBranchUtil().ParseHistoryBranchInfo(
 			ctx,
 			&ParseHistoryBranchInfoRequest{
 				BranchToken: br,
@@ -364,7 +364,7 @@ func (m *executionManagerImpl) getHistoryBranchInfo(
 	ctx context.Context,
 	branchToken []byte,
 ) (*persistencespb.HistoryBranch, error) {
-	resp, err := m.persistence.ParseHistoryBranchInfo(
+	resp, err := m.persistence.GetHistoryBranchUtil().ParseHistoryBranchInfo(
 		ctx,
 		&ParseHistoryBranchInfoRequest{
 			BranchToken: branchToken,

@@ -72,6 +72,7 @@ type (
 	HistoryStore struct {
 		Session gocql.Session
 		Logger  log.Logger
+		p.HistoryBranchUtilImpl
 	}
 )
 
@@ -197,19 +198,7 @@ func (h *HistoryStore) NewHistoryBranch(
 	ctx context.Context,
 	request *p.NewHistoryBranchRequest,
 ) (*p.NewHistoryBranchResponse, error) {
-	var branchID string
-	if request.BranchID == nil {
-		branchID = primitives.NewUUID().String()
-	} else {
-		branchID = *request.BranchID
-	}
-	branchToken, err := p.NewHistoryBranchToken(request.TreeID, branchID, request.Ancestors)
-	if err != nil {
-		return nil, err
-	}
-	return &p.NewHistoryBranchResponse{
-		BranchToken: branchToken,
-	}, nil
+	return p.CreateHistoryBranch(request)
 }
 
 // ReadHistoryBranch returns history node data for a branch
