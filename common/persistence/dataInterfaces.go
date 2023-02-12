@@ -40,7 +40,6 @@ import (
 
 	enumsspb "go.temporal.io/server/api/enums/v1"
 	persistencespb "go.temporal.io/server/api/persistence/v1"
-	"go.temporal.io/server/common/persistence/serialization"
 	"go.temporal.io/server/service/history/tasks"
 )
 
@@ -731,28 +730,6 @@ type (
 		NodeID int64
 	}
 
-	ParseHistoryBranchInfoRequest struct {
-		// The branch token to parse the branch info from
-		BranchToken []byte
-	}
-
-	ParseHistoryBranchInfoResponse struct {
-		// The branch info parsed from the branch token
-		BranchInfo *persistencespb.HistoryBranch
-	}
-
-	UpdateHistoryBranchInfoRequest struct {
-		// The original branch token
-		BranchToken []byte
-		// The branch info to update with
-		BranchInfo *persistencespb.HistoryBranch
-	}
-
-	UpdateHistoryBranchInfoResponse struct {
-		// The newly updated branch token
-		BranchToken []byte
-	}
-
 	NewHistoryBranchRequest struct {
 		// The tree ID for the new branch token
 		TreeID string
@@ -1222,43 +1199,6 @@ func UnixMilliseconds(t time.Time) int64 {
 		return 0
 	}
 	return unixNano / int64(time.Millisecond)
-}
-
-func ParseHistoryBranchToken(branchToken []byte) (*persistencespb.HistoryBranch, error) {
-	// TODO: instead of always using the implementation from the serialization package, this should be injected
-	return serialization.HistoryBranchFromBlob(branchToken, enumspb.ENCODING_TYPE_PROTO3.String())
-}
-
-func UpdateHistoryBranchToken(branchToken []byte, branchInfo *persistencespb.HistoryBranch) ([]byte, error) {
-	bi, err := ParseHistoryBranchToken(branchToken)
-	if err != nil {
-		return nil, err
-	}
-	bi.TreeId = branchInfo.TreeId
-	bi.BranchId = branchInfo.BranchId
-	bi.Ancestors = branchInfo.Ancestors
-
-	// TODO: instead of always using the implementation from the serialization package, this should be injected
-	blob, err := serialization.HistoryBranchToBlob(bi)
-	if err != nil {
-		return nil, err
-	}
-	return blob.Data, nil
-}
-
-// NewHistoryBranchToken return a new branch token
-func NewHistoryBranchToken(treeID, branchID string, ancestors []*persistencespb.HistoryBranchRange) ([]byte, error) {
-	bi := &persistencespb.HistoryBranch{
-		TreeId:    treeID,
-		BranchId:  branchID,
-		Ancestors: ancestors,
-	}
-	datablob, err := serialization.HistoryBranchToBlob(bi)
-	if err != nil {
-		return nil, err
-	}
-	token := datablob.Data
-	return token, nil
 }
 
 // BuildHistoryGarbageCleanupInfo combine the workflow identity information into a string
